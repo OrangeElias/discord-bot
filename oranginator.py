@@ -334,11 +334,6 @@ async def team_add(interaction: discord.Interaction, mitglied: discord.Member):
     team=""
     member=str(mitglied.name)
     kanal = None
-    for channel in interaction.guild.text_channels:
-        if rolle in channel.overwrites:
-            kanal = channel
-            break
-
     for mitglieder in data.values():
         if member in mitglieder:
             await interaction.response.send_message("Der Spieler ist bereits in einem Team!", ephemeral=True)
@@ -370,7 +365,46 @@ async def team_add(interaction: discord.Interaction, mitglied: discord.Member):
     
     await interaction.response.send_message("Du bist nicht der Leader dieses Teams!", ephemeral=True)
     return
-    
+@bot.tree.command(name="team_remove", description="Entfernt ein Mitglied aus deinem Team")
+async def team_remove(interaction: discord.Interaction, mitglied: discord.Member):
+    data = lade_teams()
+    team = ""
+    member = str(mitglied.name)
+    kanal = None
+    for teamname, mitglieder in data.items():
+        if interaction.user.name == mitglieder[0]:
+            team = str(teamname)
+            spielerliste = mitglieder
+            #der leader darf sich nicht selbst entfernen
+            if member == spielerliste[0]:
+                await interaction.response.send_message("Du kannst dich als Leader nicht selbst entfernen!", ephemeral=True)
+                return
+            #ist der spieler überhaupt in diesem team?
+            if member not in spielerliste:
+                await interaction.response.send_message("Der Spieler ist nicht in deinem Team!", ephemeral=True)
+                return
+            #rolle holen, bevor gespeichert wird
+            rolle = discord.utils.get(interaction.guild.roles, name=team)
+            if rolle is None:
+                await interaction.response.send_message("Die Team-Rolle wurde nicht gefunden!", ephemeral=True)
+                return
+            #mitglied wird entfernt
+            spielerliste.remove(member)
+            speichere_teams(data)
+            await mitglied.remove_roles(rolle)
+            #checkt, welcher kanal das team besitzt
+            for channel in interaction.guild.text_channels:
+                if rolle in channel.overwrites:
+                    kanal = channel
+                    break
+            #confirmed, dass alles funktioniert hat
+            await interaction.response.send_message(f"{member} wurde aus dem Team entfernt!", ephemeral=True)
+            if kanal is not None:
+                await kanal.send(f"👋 {mitglied.mention} hat das Team verlassen.")
+            return
+
+    await interaction.response.send_message("Du bist nicht der Leader eines Teams!", ephemeral=True)
+
 #Commands zur Server Ip-----------------------------------------------------
 @bot.tree.command(name="setip", description="die Ip für den Server ändern")
 @app_commands.default_permissions(administrator=True)
