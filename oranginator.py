@@ -43,7 +43,7 @@ def lade_spieler():
     try:
         with open("spieler.json", "r") as datei:
             return json.load(datei)
-    except FileNotFoundError:
+    except (FileNotFoundError, json.JSONDecodeError):
         return {}
 
 
@@ -55,8 +55,8 @@ def lade_teams():
     try:
         with open("teams.json", "r") as datei:
             return json.load(datei)
-    except FileNotFoundError:
-        return {} 
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
 
 def speichere_teams(daten):
     with open("teams.json", "w") as datei:
@@ -99,7 +99,7 @@ class Anmeldung(discord.ui.Modal, title="Anmeldung - max 4.Spieler"):
         felder = [self.Leader, self.name2, self.name3, self.name4]
         spieler = []
         for feld in felder:
-            name = feld.value.strip()
+            name = feld.value
             if name != "":
                 spieler.append(name)
 
