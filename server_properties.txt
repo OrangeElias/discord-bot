@@ -1,0 +1,4 @@
+enable-rcon=true
+rcon.port=25575
+rcon.password=ein_langes_sicheres_passwort
+white-list=true
