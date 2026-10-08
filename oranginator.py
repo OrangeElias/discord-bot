@@ -229,14 +229,14 @@ class WhitelistAnfrage(discord.ui.View):
         daten[username] = mc_name
         speichere_spieler(daten)
 
-        # 4. Buttons deaktivieren und Nachricht im Mod-Channel bearbeiten
+        #deaktiviert buttons
         self.buttons_deaktivieren()
         await interaction.response.edit_message(
             content=f"✅ {self.mitglied.mention} (`{mc_name}`) wurde von {interaction.user.mention} angenommen.",
             view=self,
         )
 
-        # 5. Spieler-Channel informieren
+        #Spieler werden im Channel begrüßt
         spieler_channel = bot.get_channel(PLAYER_CHANNEL_ID)
         if spieler_channel is not None:
             await spieler_channel.send(f"🎉 {self.mitglied.mention} wurde als `{mc_name}` gewhitelisted!")
@@ -325,7 +325,52 @@ async def hallo(interaction: discord.Interaction):
 async def parlaiment(interaction: discord.Interaction):
     await interaction.response.send_message("Lückenfüller", ephemeral=True)
 
+#Commands für Teamleader---------------------------------------------------
 
+@bot.tree.command(name="team_add", description="Fügt ein Mitglied zu deinem Team hinzu")
+async def team_add(interaction: discord.Interaction, mitglied: discord.Member):
+    data=lade_teams()
+    list=[]
+    team=""
+    member=str(mitglied.name)
+    kanal = None
+    for channel in interaction.guild.text_channels:
+        if rolle in channel.overwrites:
+            kanal = channel
+            break
+
+    for mitglieder in data.values():
+        if member in mitglieder:
+            await interaction.response.send_message("Der Spieler ist bereits in einem Team!", ephemeral=True)
+            return
+    for teamname,mitglieder in data.items():
+        if interaction.user.name==mitglieder[0]:
+            team=str(teamname)
+            list=mitglieder
+            if len(mitglieder)>=4:
+                await interaction.response.send_message("Das Team ist schon voll!", ephemeral=True)
+                return
+            #mitglied wird hinzugefügt
+            list.append(member)
+            data[team]=list
+            speichere_teams(data)
+            rolle = discord.utils.get(interaction.guild.roles, name=team)
+            await mitglied.add_roles(rolle)
+            #checkt, welcher kanal das team besitzt
+
+            for channel in interaction.guild.text_channels:
+                if rolle in channel.overwrites:
+                    kanal = channel
+                    break
+            #confirmed, dass alles funktioniert hat
+            await interaction.response.send_message(f"{member} wurde erfolgreich zum Team hinzugefügt!")
+            if kanal is not None:
+                await kanal.send(f"🎉 Willkommen im Team, {mitglied.mention}!")
+            return
+    
+    await interaction.response.send_message("Du bist nicht der Leader dieses Teams!", ephemeral=True)
+    return
+    
 #Commands zur Server Ip-----------------------------------------------------
 @bot.tree.command(name="setip", description="die Ip für den Server ändern")
 @app_commands.default_permissions(administrator=True)
